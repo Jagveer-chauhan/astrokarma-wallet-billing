@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
 
     # Local apps
+    "apps.users.apps.UsersConfig",
 ]
 
 MIDDLEWARE = [
@@ -65,6 +66,8 @@ DATABASES = {
         "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
+
+AUTH_USER_MODEL = "users.User"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
