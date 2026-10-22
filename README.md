@@ -147,7 +147,9 @@ pytest -v
 
 ---
 
-## 8. API Reference
+## 8. API Reference & Postman Collection
+
+Import [`postman_collection.json`](postman_collection.json) directly into Postman. It includes automated test scripts to store auth tokens and `session_id` into collection variables for easy one-click testing.
 
 ### Authentication (`/api/v1/auth/`)
 - `POST /register/` - Register user (`role`: `USER` or `PROVIDER`, `per_minute_rate`)

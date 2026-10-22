@@ -1,0 +1,428 @@
+{
+  "info": {
+    "_postman_id": "a918f407-2a4b-4bce-9fa7-b8938d6175e1",
+    "name": "Astrokarma - Django Wallet-Based Session Billing",
+    "description": "Postman Collection for testing User Authentication, Wallet Balance, Mock Recharges, Session Lifecycle State Machine, and Per-Minute Billing.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "client_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "provider_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "provider_id",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register Client (USER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('client_token', json.token);",
+                  "    pm.test('Client registered and token saved', function() {",
+                  "        pm.expect(json.token).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"client_alice\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"Password@123\",\n  \"role\": \"USER\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register", ""]
+            }
+          }
+        },
+        {
+          "name": "Register Provider (PROVIDER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('provider_token', json.token);",
+                  "    pm.collectionVariables.set('provider_id', json.user.id.toString());",
+                  "    pm.test('Provider registered and token/id saved', function() {",
+                  "        pm.expect(json.token).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"astrologer_bob\",\n  \"email\": \"bob@example.com\",\n  \"password\": \"Password@123\",\n  \"role\": \"PROVIDER\",\n  \"per_minute_rate\": \"50.00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register", ""]
+            }
+          }
+        },
+        {
+          "name": "Login (Client)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('client_token', json.token);",
+                  "    pm.test('Login successful', function() {",
+                  "        pm.expect(json.token).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"client_alice\",\n  \"password\": \"Password@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Profile (/auth/me/)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "me", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Wallet & Recharge",
+      "item": [
+        {
+          "name": "Get Wallet Balance & Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallet/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallet", ""]
+            }
+          }
+        },
+        {
+          "name": "Initiate Wallet Recharge",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Token {{client_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": \"500.00\",\n  \"reference\": \"rech_demo_1001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallet/recharge/initiate/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallet", "recharge", "initiate", ""]
+            }
+          }
+        },
+        {
+          "name": "Mock Recharge Webhook Callback (Success)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"rech_demo_1001\",\n  \"status\": \"success\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallet/recharge/callback/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallet", "recharge", "callback", ""]
+            }
+          }
+        },
+        {
+          "name": "Mock Recharge Webhook Callback (Duplicate Idempotency Check)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"rech_demo_1001\",\n  \"status\": \"success\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallet/recharge/callback/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallet", "recharge", "callback", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Consultation Sessions",
+      "item": [
+        {
+          "name": "Create Session (Assign Provider)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('session_id', json.id.toString());",
+                  "    pm.test('Session created and session_id stored', function() {",
+                  "        pm.expect(json.id).to.be.a('number');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Token {{client_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider_id\": {{provider_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", ""]
+            }
+          }
+        },
+        {
+          "name": "List Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Session Details & Billing History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/{{session_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "{{session_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Provider Accepts Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{provider_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/{{session_id}}/accept/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "{{session_id}}", "accept", ""]
+            }
+          }
+        },
+        {
+          "name": "Client Starts Session (Checks 5x Balance)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/{{session_id}}/start/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "{{session_id}}", "start", ""]
+            }
+          }
+        },
+        {
+          "name": "Trigger Minute Billing Tick (Target 2 Mins)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Token {{client_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_minutes\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/{{session_id}}/bill/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "{{session_id}}", "bill", ""]
+            }
+          }
+        },
+        {
+          "name": "End Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Token {{client_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Consultation completed successfully\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/{{session_id}}/end/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "{{session_id}}", "end", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
