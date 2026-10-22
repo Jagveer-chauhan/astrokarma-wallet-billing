@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     # Local apps
     "apps.users.apps.UsersConfig",
     "apps.wallets.apps.WalletsConfig",
+    "apps.consultations.apps.ConsultationsConfig",
 ]
 
 MIDDLEWARE = [
