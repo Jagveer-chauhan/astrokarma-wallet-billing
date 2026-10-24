@@ -421,6 +421,56 @@
               "path": ["api", "v1", "sessions", "{{session_id}}", "end", ""]
             }
           }
+        },
+        {
+          "name": "Cancel Session (Client)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Token {{client_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Change of plans\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/{{session_id}}/cancel/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "{{session_id}}", "cancel", ""]
+            }
+          }
+        },
+        {
+          "name": "Reject Session (Provider)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Token {{provider_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Provider is currently unavailable\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/{{session_id}}/reject/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "{{session_id}}", "reject", ""]
+            }
+          }
         }
       ]
     }

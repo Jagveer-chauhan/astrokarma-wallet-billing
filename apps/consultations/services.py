@@ -27,6 +27,12 @@ class SessionService:
         if not user.is_authenticated:
             raise BusinessRuleViolation("Authentication required to create a session.")
 
+        if provider:
+            if not provider.is_provider:
+                raise BusinessRuleViolation("Assigned user must have the PROVIDER role.")
+            if user.id == provider.id:
+                raise BusinessRuleViolation("Cannot book a consultation session with yourself.")
+
         status = SessionStatus.ASSIGNED if provider else SessionStatus.UNASSIGNED
         rate = provider.per_minute_rate if provider else Decimal("0.00")
 
@@ -53,6 +59,9 @@ class SessionService:
             if not provider.is_provider:
                 raise BusinessRuleViolation("Assigned user must have the PROVIDER role.")
 
+            if user.id == provider.id:
+                raise BusinessRuleViolation("Cannot assign yourself as provider for your own consultation.")
+
             session.provider = provider
             session.per_minute_rate = provider.per_minute_rate
             session.status = SessionStatus.ASSIGNED
@@ -74,6 +83,46 @@ class SessionService:
 
             session.status = SessionStatus.ACCEPTED_BY_PROVIDER
             session.save(update_fields=["status", "updated_at"])
+            return session
+
+    @classmethod
+    def reject_session(cls, session_id: int, provider, reason: str = "Rejected by provider") -> ConsultationSession:
+        with transaction.atomic():
+            session = ConsultationSession.objects.select_for_update().get(id=session_id)
+
+            if session.status != SessionStatus.ASSIGNED:
+                raise InvalidStateTransitionError(
+                    f"Cannot reject session. Current status is '{session.status}', expected 'assigned'."
+                )
+
+            if session.provider_id != provider.id and not provider.is_staff:
+                raise UnauthorizedSessionActionError("Only the assigned provider can reject this session.")
+
+            session.status = SessionStatus.CANCELLED
+            session.ended_by = EndedByRole.PROVIDER
+            session.end_reason = reason
+            session.ended_at = timezone.now()
+            session.save(update_fields=["status", "ended_by", "end_reason", "ended_at", "updated_at"])
+            return session
+
+    @classmethod
+    def cancel_session(cls, session_id: int, user, reason: str = "Cancelled by user") -> ConsultationSession:
+        with transaction.atomic():
+            session = ConsultationSession.objects.select_for_update().get(id=session_id)
+
+            if session.status in [SessionStatus.IN_PROGRESS, SessionStatus.COMPLETED, SessionStatus.CANCELLED]:
+                raise InvalidStateTransitionError(
+                    f"Cannot cancel session with status '{session.status}'."
+                )
+
+            if session.user_id != user.id and not user.is_staff:
+                raise UnauthorizedSessionActionError("Only the session owner can cancel the session.")
+
+            session.status = SessionStatus.CANCELLED
+            session.ended_by = EndedByRole.USER
+            session.end_reason = reason
+            session.ended_at = timezone.now()
+            session.save(update_fields=["status", "ended_by", "end_reason", "ended_at", "updated_at"])
             return session
 
     @classmethod
@@ -103,8 +152,23 @@ class SessionService:
                     "User already has an active session in progress. Complete or end it first."
                 )
 
+            # Rule: Provider cannot have more than one active (in_progress) session
+            if session.provider:
+                provider_active_session = (
+                    ConsultationSession.objects.filter(
+                        provider=session.provider,
+                        status=SessionStatus.IN_PROGRESS,
+                    )
+                    .exclude(id=session.id)
+                    .exists()
+                )
+                if provider_active_session:
+                    raise ActiveSessionExistsError(
+                        "The assigned provider already has an active session in progress. Please wait until they finish."
+                    )
+
             # Rule: Minimum balance required is 5x the per-minute session cost
-            per_minute_cost = session.provider.per_minute_rate
+            per_minute_cost = session.per_minute_rate if session.per_minute_rate > Decimal("0.00") else session.provider.per_minute_rate
             required_min_balance = per_minute_cost * Decimal("5")
 
             WalletService.get_or_create_wallet(user)
@@ -158,6 +222,14 @@ class SessionService:
                 session.total_duration_seconds = max(
                     0, int((now - session.started_at).total_seconds())
                 )
+
+            # Auto-bill any remaining unbilled elapsed time before completing
+            BillingService.process_session_billing(session_id=session.id, as_of_time=now)
+            session.refresh_from_db()
+
+            # If BillingService already auto-completed the session (e.g. insufficient funds), return it
+            if session.status == SessionStatus.COMPLETED:
+                return session
 
             session.status = SessionStatus.COMPLETED
             session.ended_by = ended_by

@@ -4,7 +4,7 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.common.exceptions import BusinessRuleViolation
+from apps.common.exceptions import BusinessRuleViolation, UnauthorizedSessionActionError
 from apps.consultations.models import ConsultationSession
 from apps.consultations.serializers import (
     AssignProviderSerializer,
@@ -40,6 +40,8 @@ class ConsultationSessionViewSet(viewsets.ModelViewSet):
             provider = get_object_or_404(User, id=provider_id)
             if not provider.is_provider:
                 raise BusinessRuleViolation("Assigned user must have the PROVIDER role.")
+            if request.user.id == provider.id:
+                raise BusinessRuleViolation("Cannot book a consultation session with yourself.")
 
         session = SessionService.create_session(
             user=request.user,
@@ -77,6 +79,38 @@ class ConsultationSessionViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @action(detail=True, methods=["post"], url_path="reject")
+    def reject(self, request, pk=None):
+        serializer = EndSessionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reason = serializer.validated_data.get("reason", "Rejected by provider")
+
+        session = SessionService.reject_session(
+            session_id=pk,
+            provider=request.user,
+            reason=reason,
+        )
+        return Response(
+            ConsultationSessionSerializer(session).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=["post"], url_path="cancel")
+    def cancel(self, request, pk=None):
+        serializer = EndSessionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reason = serializer.validated_data.get("reason", "Cancelled by user")
+
+        session = SessionService.cancel_session(
+            session_id=pk,
+            user=request.user,
+            reason=reason,
+        )
+        return Response(
+            ConsultationSessionSerializer(session).data,
+            status=status.HTTP_200_OK,
+        )
+
     @action(detail=True, methods=["post"], url_path="start")
     def start(self, request, pk=None):
         session = SessionService.start_session(
@@ -106,6 +140,11 @@ class ConsultationSessionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="bill")
     def bill(self, request, pk=None):
+        session = get_object_or_404(ConsultationSession, id=pk)
+        is_participant = request.user.id in [session.user_id, session.provider_id]
+        if not (is_participant or request.user.is_staff):
+            raise UnauthorizedSessionActionError("Only session participants or staff can trigger billing.")
+
         serializer = TriggerBillingSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 

@@ -138,3 +138,65 @@ class TestWalletAPI:
         resp2 = unauthenticated_client.post("/api/v1/wallet/recharge/callback/", callback_payload)
         assert resp2.status_code == status.HTTP_200_OK
         assert resp2.data["current_wallet_balance"] == "200.00"
+
+    def test_initiate_recharge_reference_collision_cross_user_fails(self):
+        # User 1 initiates with ref_shared
+        WalletService.initiate_recharge(self.user, Decimal("100.00"), reference="ref_shared")
+
+        # User 2 tries to initiate with ref_shared -> must be rejected
+        other_user = User.objects.create_user(username="other", email="other@example.com", password="password123")
+        with pytest.raises(BusinessRuleViolation, match="already in use by another user"):
+            WalletService.initiate_recharge(other_user, Decimal("100.00"), reference="ref_shared")
+
+    def test_cannot_succeed_already_failed_callback(self):
+        WalletService.initiate_recharge(self.user, Decimal("100.00"), reference="ref_fail_trans")
+        WalletService.process_recharge_callback("ref_fail_trans", "failed")
+
+        with pytest.raises(BusinessRuleViolation, match="already failed"):
+            WalletService.process_recharge_callback("ref_fail_trans", "success")
+
+    def test_deduct_negative_or_zero_fails(self):
+        wallet = WalletService.get_or_create_wallet(self.user)
+        with pytest.raises(BusinessRuleViolation, match="greater than zero"):
+            WalletService.deduct_for_billing(wallet.id, Decimal("-10.00"), "ref_neg", "test")
+
+        with pytest.raises(BusinessRuleViolation, match="greater than zero"):
+            WalletService.deduct_for_billing(wallet.id, Decimal("0.00"), "ref_zero", "test")
+
+    def test_webhook_secret_enforcement(self, settings):
+        settings.WEBHOOK_SECRET = "supersecretkey"
+
+        self.client.post("/api/v1/wallet/recharge/initiate/", {"amount": "100.00", "reference": "ref_sec_01"})
+        unauthenticated_client = APIClient()
+
+        # Without header -> 403 Forbidden
+        bad_resp = unauthenticated_client.post(
+            "/api/v1/wallet/recharge/callback/",
+            {"reference": "ref_sec_01", "status": "success"},
+        )
+        assert bad_resp.status_code == status.HTTP_403_FORBIDDEN
+
+        # With valid header -> 200 OK
+        good_resp = unauthenticated_client.post(
+            "/api/v1/wallet/recharge/callback/",
+            {"reference": "ref_sec_01", "status": "success"},
+            headers={"X-Webhook-Secret": "supersecretkey"},
+        )
+        assert good_resp.status_code == status.HTTP_200_OK
+
+    def test_wallet_transactions_pagination(self):
+        wallet = WalletService.get_or_create_wallet(self.user)
+        for i in range(25):
+            WalletTransaction.objects.create(
+                wallet=wallet,
+                user=self.user,
+                amount=Decimal("10.00"),
+                reference=f"pag_ref_{i}",
+                status=TransactionStatus.SUCCESS,
+            )
+
+        resp = self.client.get("/api/v1/wallet/transactions/")
+        assert resp.status_code == status.HTTP_200_OK
+        assert "results" in resp.data
+        assert resp.data["count"] == 25
+        assert len(resp.data["results"]) == 20  # page size is 20

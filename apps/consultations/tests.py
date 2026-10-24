@@ -5,6 +5,7 @@ from rest_framework.test import APIClient
 
 from apps.common.exceptions import (
     ActiveSessionExistsError,
+    BusinessRuleViolation,
     InsufficientBalanceError,
     InvalidStateTransitionError,
 )
@@ -270,3 +271,116 @@ class TestConsultationRESTApiEndpoints:
         start_resp = self.client.post(f"/api/v1/sessions/{session_id}/start/")
         assert start_resp.status_code == status.HTTP_400_BAD_REQUEST
         assert start_resp.data["code"] == "insufficient_balance"
+
+    def test_non_existent_session_returns_404(self):
+        """Verify non-existent session ID returns HTTP 404 not 500."""
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.post("/api/v1/sessions/99999/start/")
+        assert resp.status_code == status.HTTP_404_NOT_FOUND
+        assert resp.data["code"] == "not_found"
+
+    def test_cancel_session_by_user(self):
+        self.client.force_authenticate(user=self.user)
+        create_resp = self.client.post("/api/v1/sessions/", {"provider_id": self.provider.id})
+        session_id = create_resp.data["id"]
+
+        cancel_resp = self.client.post(f"/api/v1/sessions/{session_id}/cancel/", {"reason": "Change of plans"})
+        assert cancel_resp.status_code == status.HTTP_200_OK
+        assert cancel_resp.data["status"] == "cancelled"
+
+    def test_reject_session_by_provider(self):
+        self.client.force_authenticate(user=self.user)
+        create_resp = self.client.post("/api/v1/sessions/", {"provider_id": self.provider.id})
+        session_id = create_resp.data["id"]
+
+        self.client.force_authenticate(user=self.provider)
+        reject_resp = self.client.post(f"/api/v1/sessions/{session_id}/reject/", {"reason": "Busy now"})
+        assert reject_resp.status_code == status.HTTP_200_OK
+        assert reject_resp.data["status"] == "cancelled"
+
+    def test_idor_billing_protection(self):
+        """Third party user cannot trigger billing on another user's session."""
+        WalletService.initiate_recharge(self.user, Decimal("300.00"), reference="rec_idor")
+        WalletService.process_recharge_callback("rec_idor", "success")
+
+        session = SessionService.create_session(self.user, self.provider)
+        SessionService.accept_session(session.id, self.provider)
+        SessionService.start_session(session.id, self.user)
+
+        third_party = User.objects.create_user(username="attacker", email="att@example.com", password="password123")
+        self.client.force_authenticate(user=third_party)
+
+        bill_resp = self.client.post(f"/api/v1/sessions/{session.id}/bill/", {"target_minutes": 2})
+        assert bill_resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert bill_resp.data["code"] == "unauthorized_session_action"
+
+    def test_end_session_auto_bills_elapsed_minutes(self):
+        """When ending a session with elapsed time, pending minutes are automatically billed."""
+        from django.utils import timezone
+        from datetime import timedelta
+
+        WalletService.initiate_recharge(self.user, Decimal("300.00"), reference="rec_autobill")
+        WalletService.process_recharge_callback("rec_autobill", "success")
+
+        session = SessionService.create_session(self.user, self.provider)
+        SessionService.accept_session(session.id, self.provider)
+        SessionService.start_session(session.id, self.user)
+
+        # Simulate 130 seconds elapsed (2m 10s -> 3 billable minutes = ₹150)
+        session.started_at = timezone.now() - timedelta(seconds=130)
+        session.save(update_fields=["started_at"])
+
+        # End session without manual /bill/ call
+        completed_session = SessionService.end_session(session.id, self.user, reason="Call ended")
+        assert completed_session.status == SessionStatus.COMPLETED
+        assert completed_session.total_billed_minutes == 3
+        # In TestConsultationRESTApiEndpoints, self.provider.per_minute_rate is 40.00 (3 * 40 = 120.00)
+        assert completed_session.total_billed_amount == Decimal("120.00")
+
+        # Verify wallet debited ₹120 (300 - 120 = 180)
+        self.wallet.refresh_from_db()
+        assert self.wallet.balance == Decimal("180.00")
+
+    def test_self_consultation_rejected(self):
+        with pytest.raises(BusinessRuleViolation, match="Cannot book a consultation session with yourself"):
+            SessionService.create_session(self.provider, self.provider)
+
+    def test_provider_concurrent_active_session_rejected(self):
+        """Provider cannot be in two active sessions simultaneously."""
+        WalletService.initiate_recharge(self.user, Decimal("500.00"), reference="rec_prov_conc")
+        WalletService.process_recharge_callback("rec_prov_conc", "success")
+
+        # Start first session with provider
+        s1 = SessionService.create_session(self.user, self.provider)
+        SessionService.accept_session(s1.id, self.provider)
+        SessionService.start_session(s1.id, self.user)
+
+        # Second client attempts session with same provider
+        client2 = User.objects.create_user(username="client2", email="c2@example.com", password="password123")
+        WalletService.initiate_recharge(client2, Decimal("500.00"), reference="rec_c2")
+        WalletService.process_recharge_callback("rec_c2", "success")
+
+        s2 = SessionService.create_session(client2, self.provider)
+        SessionService.accept_session(s2.id, self.provider)
+
+        with pytest.raises(ActiveSessionExistsError, match="provider already has an active session"):
+            SessionService.start_session(s2.id, client2)
+
+    def test_auth_validations(self):
+        """Test registration duplicate email and 401 on invalid login."""
+        # Duplicate email
+        resp = self.client.post("/api/v1/auth/register/", {
+            "username": "unique_name",
+            "email": self.user.email,  # duplicate
+            "password": "validpassword123",
+            "role": "USER",
+        })
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert "email" in resp.data
+
+        # Bad login -> 401
+        login_resp = self.client.post("/api/v1/auth/login/", {
+            "username": self.user.username,
+            "password": "wrongpassword",
+        })
+        assert login_resp.status_code == status.HTTP_401_UNAUTHORIZED

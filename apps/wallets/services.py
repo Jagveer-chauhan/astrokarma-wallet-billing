@@ -24,18 +24,27 @@ class WalletService:
             raise BusinessRuleViolation("Recharge amount must be greater than zero.")
 
         wallet = cls.get_or_create_wallet(user)
-        reference_id = reference or f"rech_{uuid.uuid4().hex[:16]}"
+        reference_id = reference.strip() if reference and reference.strip() else f"rech_{uuid.uuid4().hex[:16]}"
 
-        transaction_record, created = WalletTransaction.objects.get_or_create(
+        if reference:
+            existing_txn = WalletTransaction.objects.filter(reference=reference_id).first()
+            if existing_txn:
+                if existing_txn.user_id != user.id:
+                    raise BusinessRuleViolation("Transaction reference is already in use by another user.")
+                if existing_txn.status != TransactionStatus.PENDING:
+                    raise BusinessRuleViolation(f"Transaction reference is already finalized with status '{existing_txn.status}'.")
+                if existing_txn.amount != amount:
+                    raise BusinessRuleViolation("Pending transaction with this reference already exists with a different amount.")
+                return existing_txn
+
+        transaction_record = WalletTransaction.objects.create(
+            wallet=wallet,
+            user=user,
+            amount=amount,
             reference=reference_id,
-            defaults={
-                "wallet": wallet,
-                "user": user,
-                "amount": amount,
-                "transaction_type": TransactionType.RECHARGE,
-                "status": TransactionStatus.PENDING,
-                "description": f"Wallet recharge of INR {amount}",
-            },
+            transaction_type=TransactionType.RECHARGE,
+            status=TransactionStatus.PENDING,
+            description=f"Wallet recharge of INR {amount}",
         )
         return transaction_record
 
@@ -50,11 +59,16 @@ class WalletService:
             if not txn:
                 raise BusinessRuleViolation(f"Transaction with reference '{reference}' does not exist.")
 
+            normalized_status = callback_status.strip().lower()
+
             # Idempotency guard: If already success, do not credit again
             if txn.status == TransactionStatus.SUCCESS:
                 return txn
 
-            normalized_status = callback_status.strip().lower()
+            if txn.status == TransactionStatus.FAILED:
+                if normalized_status == TransactionStatus.FAILED:
+                    return txn
+                raise BusinessRuleViolation(f"Transaction '{reference}' is already failed and cannot transition to '{callback_status}'.")
 
             if normalized_status == TransactionStatus.SUCCESS:
                 wallet = Wallet.objects.select_for_update().get(id=txn.wallet_id)
@@ -84,6 +98,9 @@ class WalletService:
         Deducts amount from wallet atomically.
         Assumes caller is within transaction.atomic() or creates one.
         """
+        if amount <= Decimal("0.00"):
+            raise BusinessRuleViolation("Deduction amount must be greater than zero.")
+
         with transaction.atomic():
             wallet = Wallet.objects.select_for_update().get(id=wallet_id)
             if wallet.balance < amount:

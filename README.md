@@ -135,7 +135,7 @@ The test suite thoroughly verifies all 6 mandatory assessment scenarios plus add
 pytest -v
 ```
 
-### Verified Test Scenarios:
+### Verified Test Scenarios (32 Comprehensive Tests):
 1. `test_scenario_1_insufficient_balance_to_start`: User with `< 5x` cost cannot start a session.
 2. `test_scenario_2_happy_path`: Recharge -> Create -> Provider accepts -> Start -> 2-min billing -> End session -> Wallet debited accurately.
 3. `test_scenario_3_balance_runs_out`: Mid-session balance exhaustion -> Auto-terminated by system -> `ended_by="system"` -> `reason="Insufficient Balance"` -> Wallet never negative.
@@ -144,6 +144,18 @@ pytest -v
 6. `test_scenario_6_duplicate_billing`: Duplicate ticks for the same minute do not charge twice.
 7. `test_single_active_session_restriction`: User cannot run 2 concurrent sessions in progress.
 8. `test_api_invalid_transition_returns_400` & `test_api_insufficient_balance_returns_400`: REST API validation.
+9. `test_end_session_auto_bills_elapsed_minutes`: Automatically bills elapsed minutes upon ending session.
+10. `test_self_consultation_rejected`: Users cannot book a session with themselves.
+11. `test_provider_concurrent_active_session_rejected`: Providers cannot take multiple active sessions simultaneously.
+12. `test_cancel_session_by_user` & `test_reject_session_by_provider`: State machine cancellation flows.
+13. `test_idor_billing_protection`: Third-party users cannot trigger billing on other users' sessions.
+14. `test_non_existent_session_returns_404`: Clean 404 responses instead of unhandled 500s.
+15. `test_initiate_recharge_reference_collision_cross_user_fails`: Prevents cross-user reference hijacking.
+16. `test_cannot_succeed_already_failed_callback`: Prevents invalid transition from failed to success.
+17. `test_deduct_negative_or_zero_fails`: Guards against negative/zero deduction exploits.
+18. `test_webhook_secret_enforcement`: Verifies optional HMAC/secret header on webhook endpoint.
+19. `test_wallet_transactions_pagination`: Validates standard pagination for transaction history.
+20. `test_auth_validations`: Enforces unique email registration and HTTP 401 on bad credentials.
 
 ---
 
@@ -153,16 +165,17 @@ Import [`postman_collection.json`](postman_collection.json) directly into Postma
 
 ### Authentication (`/api/v1/auth/`)
 - `POST /register/` - Register user (`role`: `USER` or `PROVIDER`, `per_minute_rate`)
-- `POST /login/` - Login and obtain Auth Token
+- `POST /login/` - Login and obtain Auth Token (returns 401 on bad credentials)
 - `GET /me/` - Current authenticated user profile
 
 ### Wallet (`/api/v1/wallet/`)
 - `GET /` - View current wallet balance and recent transactions
+- `GET /transactions/` - Paginated wallet transaction history (`page`, `page_size`)
 - `POST /recharge/initiate/` - Initiate a mock recharge:
   ```json
   { "amount": "500.00", "reference": "rech_123" }
   ```
-- `POST /recharge/callback/` - Mock payment webhook (Idempotent):
+- `POST /recharge/callback/` - Mock payment webhook (Idempotent, supports `X-Webhook-Secret`):
   ```json
   { "reference": "rech_123", "status": "success" }
   ```
@@ -173,6 +186,8 @@ Import [`postman_collection.json`](postman_collection.json) directly into Postma
 - `GET /{id}/` - Retrieve session details with billing history
 - `POST /{id}/assign/` - Assign session to provider (`{"provider_id": 2}`)
 - `POST /{id}/accept/` - Provider accepts session
-- `POST /{id}/start/` - User starts session (checks min 5x rate balance)
-- `POST /{id}/end/` - User or provider ends session (`{"reason": "Finished"}`)
-- `POST /{id}/bill/` - Trigger billing tick (`{"target_minutes": 2}`)
+- `POST /{id}/reject/` - Provider declines session (`{"reason": "Unavailable"}`)
+- `POST /{id}/cancel/` - Client cancels session (`{"reason": "Change of plans"}`)
+- `POST /{id}/start/` - User starts session (checks min 5x rate balance & provider availability)
+- `POST /{id}/end/` - User or provider ends session (auto-bills remaining minutes)
+- `POST /{id}/bill/` - Trigger billing tick (protected against IDOR)
