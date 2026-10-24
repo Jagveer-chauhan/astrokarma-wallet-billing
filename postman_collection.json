@@ -256,6 +256,33 @@
               "path": ["api", "v1", "wallet", "recharge", "callback", ""]
             }
           }
+        },
+        {
+          "name": "Get Paginated Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallet/transactions/?page=1&page_size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallet", "transactions", ""],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "20"
+                }
+              ]
+            }
+          }
         }
       ]
     },
@@ -263,7 +290,7 @@
       "name": "3. Consultation Sessions",
       "item": [
         {
-          "name": "Create Session (Assign Provider)",
+          "name": "Create Session (With Provider)",
           "event": [
             {
               "listen": "test",
@@ -301,6 +328,31 @@
               "raw": "{{base_url}}/api/v1/sessions/",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "sessions", ""]
+            }
+          }
+        },
+        {
+          "name": "Assign Provider to Open Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Token {{client_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider_id\": {{provider_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/{{session_id}}/assign/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "{{session_id}}", "assign", ""]
             }
           }
         },

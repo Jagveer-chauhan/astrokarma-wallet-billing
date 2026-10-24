@@ -1,0 +1,393 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 940" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .main-title { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; font-size: 24px; font-weight: 800; fill: #0f172a; }
+      .main-subtitle { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; font-size: 13px; fill: #64748b; }
+      
+      /* Package/App Boundaries */
+      .app-boundary-users { fill: #eff6ff; stroke: #3b82f6; stroke-width: 1.5; stroke-dasharray: 6 4; rx: 12px; }
+      .app-boundary-wallets { fill: #ecfdf5; stroke: #10b981; stroke-width: 1.5; stroke-dasharray: 6 4; rx: 12px; }
+      .app-boundary-consultations { fill: #f5f3ff; stroke: #8b5cf6; stroke-width: 1.5; stroke-dasharray: 6 4; rx: 12px; }
+      .app-boundary-common { fill: #fffbeb; stroke: #f59e0b; stroke-width: 1.5; stroke-dasharray: 6 4; rx: 12px; }
+      
+      .app-header-users { font-family: 'Segoe UI', sans-serif; font-size: 13px; font-weight: 700; fill: #1d4ed8; letter-spacing: 0.5px; }
+      .app-header-wallets { font-family: 'Segoe UI', sans-serif; font-size: 13px; font-weight: 700; fill: #047857; letter-spacing: 0.5px; }
+      .app-header-consultations { font-family: 'Segoe UI', sans-serif; font-size: 13px; font-weight: 700; fill: #6d28d9; letter-spacing: 0.5px; }
+      .app-header-common { font-family: 'Segoe UI', sans-serif; font-size: 13px; font-weight: 700; fill: #b45309; letter-spacing: 0.5px; }
+      
+      /* Model Cards */
+      .model-card { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; rx: 6px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.04)); }
+      .model-head-users { fill: #3b82f6; rx: 6px; }
+      .model-head-wallets { fill: #10b981; rx: 6px; }
+      .model-head-consultations { fill: #8b5cf6; rx: 6px; }
+      .model-title { font-family: 'Segoe UI', sans-serif; font-size: 13px; font-weight: 700; fill: #ffffff; }
+      
+      /* Fields and code */
+      .field-text { font-family: 'Courier New', monospace; font-size: 11px; fill: #1e293b; font-weight: 600; }
+      .type-text { font-family: 'Segoe UI', sans-serif; font-size: 11px; fill: #64748b; }
+      .divider-line { stroke: #f1f5f9; stroke-width: 1; }
+      
+      /* Badges */
+      .pk-box { fill: #fee2e2; stroke: #ef4444; stroke-width: 0.8; rx: 3; }
+      .pk-txt { font-family: 'Segoe UI', sans-serif; font-size: 9px; font-weight: 800; fill: #b91c1c; }
+      .fk-box { fill: #e0f2fe; stroke: #0284c7; stroke-width: 0.8; rx: 3; }
+      .fk-txt { font-family: 'Segoe UI', sans-serif; font-size: 9px; font-weight: 800; fill: #0369a1; }
+      
+      /* Service / Component Tags */
+      .service-box { fill: #ffffff; stroke: #94a3b8; stroke-width: 1; rx: 5px; }
+      .service-title { font-family: 'Segoe UI', sans-serif; font-size: 11px; font-weight: 700; fill: #334155; }
+      .service-method { font-family: 'Courier New', monospace; font-size: 10px; fill: #475569; }
+      
+      /* Relationships */
+      .rel-line-model { stroke: #2563eb; stroke-width: 1.8; fill: none; }
+      .rel-line-call { stroke: #dc2626; stroke-width: 1.5; stroke-dasharray: 4 3; fill: none; }
+      .rel-tag { fill: #ffffff; stroke: #94a3b8; stroke-width: 0.8; rx: 3px; }
+      .rel-tag-txt { font-family: 'Segoe UI', sans-serif; font-size: 10px; font-weight: 700; fill: #1e293b; }
+    </style>
+    
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#dc2626" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" class="bg" />
+
+  <!-- Title Header -->
+  <text x="40" y="38" class="main-title">Astrokarma Project Structure &amp; Domain Model Architecture</text>
+  <text x="40" y="58" class="main-subtitle">Entity-Relationship &amp; Service Interactions Organised by Django Apps (Clean Modular Architecture)</text>
+
+  <!-- ========================================================================= -->
+  <!-- 1. APP: apps/users/ -->
+  <!-- ========================================================================= -->
+  <g transform="translate(40, 80)">
+    <rect width="360" height="380" class="app-boundary-users" />
+    <text x="18" y="25" class="app-header-users">📁 apps/users/ (Authentication &amp; User Directory)</text>
+
+    <!-- Model: User -->
+    <g transform="translate(18, 38)">
+      <rect width="324" height="230" class="model-card" />
+      <path d="M 0 6 Q 0 0 6 0 L 318 0 Q 324 0 324 6 L 324 28 L 0 28 Z" class="model-head-users" />
+      <text x="12" y="19" class="model-title">Model: User (AbstractUser)</text>
+
+      <!-- Fields -->
+      <g transform="translate(10, 36)">
+        <rect x="0" y="0" width="20" height="13" class="pk-box"/><text x="4" y="10" class="pk-txt">PK</text>
+        <text x="26" y="10" class="field-text">id</text><text x="210" y="10" class="type-text">BigAutoField</text>
+        <line x1="0" y1="18" x2="304" y2="18" class="divider-line" />
+
+        <text x="0" y="32" class="field-text">username</text><text x="190" y="32" class="type-text">CharField(150)</text>
+        <line x1="0" y1="40" x2="304" y2="40" class="divider-line" />
+
+        <text x="0" y="54" class="field-text">email</text><text x="190" y="54" class="type-text">EmailField(unique)</text>
+        <line x1="0" y1="62" x2="304" y2="62" class="divider-line" />
+
+        <text x="0" y="76" class="field-text">password</text><text x="190" y="76" class="type-text">CharField(hash)</text>
+        <line x1="0" y1="84" x2="304" y2="84" class="divider-line" />
+
+        <text x="0" y="98" class="field-text">role</text><text x="160" y="98" class="type-text">'USER' | 'PROVIDER'</text>
+        <line x1="0" y1="106" x2="304" y2="106" class="divider-line" />
+
+        <text x="0" y="120" class="field-text">per_minute_rate</text><text x="190" y="120" class="type-text">Decimal(10,2)</text>
+        <line x1="0" y1="128" x2="304" y2="128" class="divider-line" />
+
+        <text x="0" y="142" class="field-text">is_active, is_staff</text><text x="190" y="142" class="type-text">BooleanField</text>
+        <line x1="0" y1="150" x2="304" y2="150" class="divider-line" />
+
+        <text x="0" y="164" class="field-text">date_joined</text><text x="190" y="164" class="type-text">DateTimeField</text>
+      </g>
+    </g>
+
+    <!-- Services / APIs in users -->
+    <g transform="translate(18, 280)">
+      <rect width="324" height="85" class="service-box" />
+      <text x="12" y="18" class="service-title">⚙️ Views &amp; Serializers in apps/users/</text>
+      <text x="12" y="36" class="service-method">• RegisterView (RegisterSerializer) - Rate validation</text>
+      <text x="12" y="52" class="service-method">• LoginView (TokenObtainPairView) - HTTP 401 handling</text>
+      <text x="12" y="68" class="service-method">• UserViewSet - List providers &amp; profiles</text>
+    </g>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- 2. APP: apps/wallets/ -->
+  <!-- ========================================================================= -->
+  <g transform="translate(430, 80)">
+    <rect width="450" height="520" class="app-boundary-wallets" />
+    <text x="18" y="25" class="app-header-wallets">📁 apps/wallets/ (Ledger &amp; Financial Operations)</text>
+
+    <!-- Model: Wallet -->
+    <g transform="translate(18, 38)">
+      <rect width="414" height="150" class="model-card" />
+      <path d="M 0 6 Q 0 0 6 0 L 408 0 Q 414 0 414 6 L 414 28 L 0 28 Z" class="model-head-wallets" />
+      <text x="12" y="19" class="model-title">Model: Wallet (Prepaid Balance)</text>
+
+      <g transform="translate(10, 36)">
+        <rect x="0" y="0" width="20" height="13" class="pk-box"/><text x="4" y="10" class="pk-txt">PK</text>
+        <text x="26" y="10" class="field-text">id</text><text x="290" y="10" class="type-text">BigAutoField</text>
+        <line x1="0" y1="18" x2="394" y2="18" class="divider-line" />
+
+        <rect x="0" y="22" width="20" height="13" class="fk-box"/><text x="4" y="32" class="fk-txt">FK</text>
+        <text x="26" y="32" class="field-text">user</text><text x="200" y="32" class="type-text">OneToOne(apps.users.User)</text>
+        <line x1="0" y1="40" x2="394" y2="40" class="divider-line" />
+
+        <text x="0" y="54" class="field-text">balance</text><text x="190" y="54" class="type-text">Decimal(12,2) [CHECK &gt;= 0.00]</text>
+        <line x1="0" y1="62" x2="394" y2="62" class="divider-line" />
+
+        <text x="0" y="76" class="field-text">created_at, updated_at</text><text x="270" y="76" class="type-text">DateTimeField</text>
+      </g>
+    </g>
+
+    <!-- Model: WalletTransaction -->
+    <g transform="translate(18, 205)">
+      <rect width="414" height="185" class="model-card" />
+      <path d="M 0 6 Q 0 0 6 0 L 408 0 Q 414 0 414 6 L 414 28 L 0 28 Z" class="model-head-wallets" />
+      <text x="12" y="19" class="model-title">Model: WalletTransaction (Audit Ledger)</text>
+
+      <g transform="translate(10, 36)">
+        <rect x="0" y="0" width="20" height="13" class="pk-box"/><text x="4" y="10" class="pk-txt">PK</text>
+        <text x="26" y="10" class="field-text">id</text><text x="290" y="10" class="type-text">BigAutoField</text>
+        <line x1="0" y1="18" x2="394" y2="18" class="divider-line" />
+
+        <rect x="0" y="22" width="20" height="13" class="fk-box"/><text x="4" y="32" class="fk-txt">FK</text>
+        <text x="26" y="32" class="field-text">wallet</text><text x="260" y="32" class="type-text">FK(wallets.Wallet)</text>
+        <line x1="0" y1="40" x2="394" y2="40" class="divider-line" />
+
+        <rect x="0" y="44" width="20" height="13" class="fk-box"/><text x="4" y="54" class="fk-txt">FK</text>
+        <text x="26" y="54" class="field-text">user</text><text x="260" y="54" class="type-text">FK(apps.users.User)</text>
+        <line x1="0" y1="62" x2="394" y2="62" class="divider-line" />
+
+        <text x="0" y="76" class="field-text">amount</text><text x="260" y="76" class="type-text">Decimal(12,2) &gt;= 0.01</text>
+        <line x1="0" y1="84" x2="394" y2="84" class="divider-line" />
+
+        <text x="0" y="98" class="field-text">transaction_type</text><text x="230" y="98" class="type-text">'recharge'|'debit'|'refund'</text>
+        <line x1="0" y1="106" x2="394" y2="106" class="divider-line" />
+
+        <text x="0" y="120" class="field-text">reference (Unique)</text><text x="250" y="120" class="type-text">CharField(100) [Index]</text>
+        <line x1="0" y1="128" x2="394" y2="128" class="divider-line" />
+
+        <text x="0" y="142" class="field-text">status</text><text x="230" y="142" class="type-text">'pending'|'success'|'failed'</text>
+      </g>
+    </g>
+
+    <!-- Services in wallets -->
+    <g transform="translate(18, 405)">
+      <rect width="414" height="98" class="service-box" />
+      <text x="12" y="18" class="service-title">⚙️ Service Layer: WalletService (Pessimistic Locking)</text>
+      <text x="12" y="34" class="service-method">• initiate_recharge(user, amount) -&gt; Pending Transaction</text>
+      <text x="12" y="50" class="service-method">• process_recharge_webhook(ref, status) [Idempotent Atomic]</text>
+      <text x="12" y="66" class="service-method">• deduct_for_billing(user, amount, ref, desc) [select_for_update]</text>
+      <text x="12" y="82" class="service-method">• refund_for_billing(user, amount, ref, desc)</text>
+    </g>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- 3. APP: apps/consultations/ -->
+  <!-- ========================================================================= -->
+  <g transform="translate(40, 480)">
+    <rect width="360" height="420" class="app-boundary-consultations" />
+    <text x="18" y="25" class="app-header-consultations">📁 apps/consultations/ (Sessions &amp; Metering)</text>
+
+    <!-- Model: ConsultationSession -->
+    <g transform="translate(18, 38)">
+      <rect width="324" height="235" class="model-card" />
+      <path d="M 0 6 Q 0 0 6 0 L 318 0 Q 324 0 324 6 L 324 28 L 0 28 Z" class="model-head-consultations" />
+      <text x="12" y="19" class="model-title">Model: ConsultationSession</text>
+
+      <g transform="translate(10, 36)">
+        <rect x="0" y="0" width="20" height="13" class="pk-box"/><text x="4" y="10" class="pk-txt">PK</text>
+        <text x="26" y="10" class="field-text">id</text><text x="210" y="10" class="type-text">BigAutoField</text>
+        <line x1="0" y1="18" x2="304" y2="18" class="divider-line" />
+
+        <rect x="0" y="22" width="20" height="13" class="fk-box"/><text x="4" y="32" class="fk-txt">FK</text>
+        <text x="26" y="32" class="field-text">user (Client)</text><text x="180" y="32" class="type-text">FK(apps.users.User)</text>
+        <line x1="0" y1="40" x2="304" y2="40" class="divider-line" />
+
+        <rect x="0" y="44" width="20" height="13" class="fk-box"/><text x="4" y="54" class="fk-txt">FK</text>
+        <text x="26" y="54" class="field-text">provider (Astrologer)</text><text x="180" y="54" class="type-text">FK(apps.users.User, Null)</text>
+        <line x1="0" y1="62" x2="304" y2="62" class="divider-line" />
+
+        <text x="0" y="76" class="field-text">status</text><text x="160" y="76" class="type-text">unassigned..completed</text>
+        <line x1="0" y1="84" x2="304" y2="84" class="divider-line" />
+
+        <text x="0" y="98" class="field-text">per_minute_rate</text><text x="200" y="98" class="type-text">Decimal(10,2)</text>
+        <line x1="0" y1="106" x2="304" y2="106" class="divider-line" />
+
+        <text x="0" y="120" class="field-text">started_at, ended_at</text><text x="200" y="120" class="type-text">DateTimeField</text>
+        <line x1="0" y1="128" x2="304" y2="128" class="divider-line" />
+
+        <text x="0" y="142" class="field-text">total_duration_seconds</text><text x="220" y="142" class="type-text">IntegerField</text>
+        <line x1="0" y1="150" x2="304" y2="150" class="divider-line" />
+
+        <text x="0" y="164" class="field-text">total_billed_amount</text><text x="200" y="164" class="type-text">Decimal(12,2)</text>
+        <line x1="0" y1="172" x2="304" y2="172" class="divider-line" />
+
+        <text x="0" y="186" class="field-text">ended_by, end_reason</text><text x="200" y="186" class="type-text">CharField</text>
+      </g>
+    </g>
+
+    <!-- Services in consultations -->
+    <g transform="translate(18, 288)">
+      <rect width="324" height="115" class="service-box" />
+      <text x="12" y="18" class="service-title">⚙️ Services in apps/consultations/</text>
+      <text x="12" y="34" class="service-method">• SessionService.start_session() [Checks &gt;= 5x rate]</text>
+      <text x="12" y="50" class="service-method">• SessionService.end_session() [Auto-bills elapsed time]</text>
+      <text x="12" y="66" class="service-method">• SessionService.cancel_session() / reject_session()</text>
+      <text x="12" y="82" class="service-method">• BillingService.bill_minute() [Safe insufficient balance]</text>
+      <text x="12" y="98" class="service-method">• IDOR security checks on participants</text>
+    </g>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- 4. APP: apps/consultations/ (Sub-Component: SessionBillingRecord) -->
+  <!-- ========================================================================= -->
+  <g transform="translate(430, 620)">
+    <rect width="450" height="280" class="app-boundary-consultations" />
+    <text x="18" y="25" class="app-header-consultations">📁 apps/consultations/ (Minute Audit Trail)</text>
+
+    <!-- Model: SessionBillingRecord -->
+    <g transform="translate(18, 38)">
+      <rect width="414" height="165" class="model-card" />
+      <path d="M 0 6 Q 0 0 6 0 L 408 0 Q 414 0 414 6 L 414 28 L 0 28 Z" class="model-head-consultations" />
+      <text x="12" y="19" class="model-title">Model: SessionBillingRecord</text>
+
+      <g transform="translate(10, 36)">
+        <rect x="0" y="0" width="20" height="13" class="pk-box"/><text x="4" y="10" class="pk-txt">PK</text>
+        <text x="26" y="10" class="field-text">id</text><text x="290" y="10" class="type-text">BigAutoField</text>
+        <line x1="0" y1="18" x2="394" y2="18" class="divider-line" />
+
+        <rect x="0" y="22" width="20" height="13" class="fk-box"/><text x="4" y="32" class="fk-txt">FK</text>
+        <text x="26" y="32" class="field-text">session</text><text x="200" y="32" class="type-text">FK(ConsultationSession)</text>
+        <line x1="0" y1="40" x2="394" y2="40" class="divider-line" />
+
+        <text x="0" y="54" class="field-text">minute_number [UQ: (session, minute)]</text><text x="290" y="54" class="type-text">IntegerField</text>
+        <line x1="0" y1="62" x2="394" y2="62" class="divider-line" />
+
+        <text x="0" y="76" class="field-text">amount</text><text x="290" y="76" class="type-text">Decimal(10,2)</text>
+        <line x1="0" y1="84" x2="394" y2="84" class="divider-line" />
+
+        <rect x="0" y="88" width="20" height="13" class="fk-box"/><text x="4" y="98" class="fk-txt">FK</text>
+        <text x="26" y="98" class="field-text">wallet_transaction</text><text x="180" y="98" class="type-text">OneToOne(wallets.WalletTransaction)</text>
+        <line x1="0" y1="106" x2="394" y2="106" class="divider-line" />
+
+        <text x="0" y="120" class="field-text">billed_at</text><text x="290" y="120" class="type-text">DateTimeField</text>
+      </g>
+    </g>
+
+    <text x="20" y="235" class="service-method" style="font-weight: bold; fill: #6d28d9;">
+      🔒 Unique constraint on (session_id, minute_number) guarantees idempotency
+    </text>
+    <text x="20" y="255" class="service-method" style="fill: #475569;">
+      Each billed minute maps directly to one immutable Debit WalletTransaction record.
+    </text>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- 5. APP: apps/common/ -->
+  <!-- ========================================================================= -->
+  <g transform="translate(910, 80)">
+    <rect width="370" height="400" class="app-boundary-common" />
+    <text x="18" y="25" class="app-header-common">📁 apps/common/ (Cross-Cutting Exceptions)</text>
+
+    <g transform="translate(18, 42)">
+      <rect width="334" height="230" class="service-box" />
+      <text x="12" y="22" class="service-title" style="fill: #b45309;">Shared Domain Exception Classes</text>
+      
+      <text x="12" y="48" class="field-text" style="fill: #b45309;">BusinessRuleViolation(APIException)</text>
+      <text x="20" y="64" class="type-text">• Default HTTP 400 Bad Request</text>
+      <line x1="10" y1="74" x2="324" y2="74" class="divider-line" />
+
+      <text x="12" y="92" class="field-text" style="fill: #b45309;">InsufficientBalanceError(BusinessRuleViolation)</text>
+      <text x="20" y="108" class="type-text">• Raised when wallet &lt; 5x rate to start call</text>
+      <line x1="10" y1="118" x2="324" y2="118" class="divider-line" />
+
+      <text x="12" y="136" class="field-text" style="fill: #b45309;">InvalidStateTransitionError(BusinessRuleViolation)</text>
+      <text x="20" y="152" class="type-text">• Raised on illegal session state jumps</text>
+      <line x1="10" y1="162" x2="324" y2="162" class="divider-line" />
+
+      <text x="12" y="180" class="field-text" style="fill: #b45309;">custom_exception_handler(exc, context)</text>
+      <text x="20" y="196" class="type-text">• Formats ObjectDoesNotExist / 404 cleanly</text>
+      <text x="20" y="212" class="type-text">• Standardises error response format across apps</text>
+    </g>
+
+    <!-- Project config notes -->
+    <g transform="translate(18, 290)">
+      <rect width="334" height="92" class="service-box" />
+      <text x="12" y="18" class="service-title">⚙️ config/ Integration</text>
+      <text x="12" y="36" class="service-method">• REST_FRAMEWORK settings injects handler</text>
+      <text x="12" y="52" class="service-method">• SimpleJWT config handles Bearer tokens</text>
+      <text x="12" y="68" class="service-method">• Database connection pooling &amp; isolation</text>
+    </g>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- CROSS-APP RELATIONSHIP LINES & ARROWS -->
+  <!-- ========================================================================= -->
+
+  <!-- User (apps/users) -> Wallet (apps/wallets) [1:1] -->
+  <path d="M 364 180 L 448 180" class="rel-line-model" marker-end="url(#arrow-blue)" />
+  <rect x="378" y="168" width="56" height="20" class="rel-tag" />
+  <text x="384" y="182" class="rel-tag-txt">1 : 1 FK</text>
+
+  <!-- User (apps/users) -> ConsultationSession (apps/consultations) [1:N] -->
+  <path d="M 200 370 L 200 480" class="rel-line-model" marker-end="url(#arrow-blue)" />
+  <rect x="168" y="420" width="64" height="20" class="rel-tag" />
+  <text x="174" y="434" class="rel-tag-txt">1 : N Client</text>
+
+  <!-- ConsultationSession -> SessionBillingRecord [1:N] -->
+  <path d="M 382 660 L 448 660" class="rel-line-model" marker-end="url(#arrow-blue)" />
+  <rect x="390" y="648" width="52" height="20" class="rel-tag" />
+  <text x="396" y="662" class="rel-tag-txt">1 : N</text>
+
+  <!-- SessionBillingRecord -> WalletTransaction [1:1] -->
+  <path d="M 640 620 L 640 400" class="rel-line-model" marker-end="url(#arrow-blue)" />
+  <rect x="608" y="495" width="64" height="20" class="rel-tag" />
+  <text x="614" y="509" class="rel-tag-txt">1 : 1 Ref</text>
+
+  <!-- Cross-App Service Call: SessionService -> WalletService.deduct_for_billing -->
+  <path d="M 382 780 L 920 780 L 920 540 L 860 540" class="rel-line-call" marker-end="url(#arrow-red)" />
+  <rect x="910" y="640" width="160" height="22" class="rel-tag" style="stroke: #dc2626;" />
+  <text x="918" y="655" class="rel-tag-txt" style="fill: #dc2626;">Service Call: deduct()</text>
+
+  <!-- ========================================================================= -->
+  <!-- DIAGRAM LEGEND -->
+  <!-- ========================================================================= -->
+  <g transform="translate(910, 500)">
+    <rect width="370" height="400" fill="#ffffff" stroke="#cbd5e1" rx="8" />
+    <text x="16" y="25" class="service-title" style="font-size: 13px;">Diagram Legend &amp; Architecture Rules</text>
+    
+    <rect x="16" y="45" width="14" height="14" class="app-boundary-users" />
+    <text x="38" y="57" class="type-text" style="font-weight: 600; fill: #1e293b;">Dashed Boxes:</text>
+    <text x="140" y="57" class="type-text">Django App / Directory boundaries</text>
+
+    <rect x="16" y="75" width="14" height="14" fill="#3b82f6" rx="3" />
+    <text x="38" y="87" class="type-text" style="font-weight: 600; fill: #1e293b;">Solid Blue Line:</text>
+    <text x="140" y="87" class="type-text">Django ORM ForeignKey / OneToOne</text>
+
+    <line x1="16" y1="110" x2="30" y2="110" class="rel-line-call" />
+    <text x="38" y="114" class="type-text" style="font-weight: 600; fill: #dc2626;">Dashed Red Line:</text>
+    <text x="140" y="114" class="type-text">Cross-app Service layer method invocation</text>
+
+    <line x1="16" y1="135" x2="354" y2="135" class="divider-line" />
+
+    <text x="16" y="158" class="service-title">Architectural Boundaries Enforced:</text>
+    <text x="16" y="180" class="type-text">• <tspan style="font-weight: bold; fill: #0f172a;">Clean Separation of Concerns:</tspan></text>
+    <text x="24" y="198" class="type-text">Consultation logic never mutates wallet balances</text>
+    <text x="24" y="214" class="type-text">directly via SQL; it delegates strictly to WalletService.</text>
+
+    <text x="16" y="240" class="type-text">• <tspan style="font-weight: bold; fill: #0f172a;">Audit Trail Preservation:</tspan></text>
+    <text x="24" y="258" class="type-text">Every minute billed creates a SessionBillingRecord</text>
+    <text x="24" y="274" class="type-text">and an immutable WalletTransaction audit record.</text>
+
+    <text x="16" y="300" class="type-text">• <tspan style="font-weight: bold; fill: #0f172a;">Centralized Exception Handling:</tspan></text>
+    <text x="24" y="318" class="type-text">apps/common catches business errors and serializes</text>
+    <text x="24" y="334" class="type-text">them into uniform JSON format with proper HTTP codes.</text>
+    
+    <text x="16" y="365" class="service-method" style="font-size: 11px; fill: #2563eb;">
+      Assessment Artifact: Astrokarma Backend Engineering
+    </text>
+  </g>
+</svg>
